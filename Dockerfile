@@ -1,12 +1,8 @@
 FROM debian:bullseye as builder
 
-ARG NODE_VERSION=18.12.0
-
-RUN apt-get update; apt install -y curl
-RUN curl https://get.volta.sh | bash
-ENV VOLTA_HOME /root/.volta
-ENV PATH /root/.volta/bin:$PATH
-RUN volta install node@${NODE_VERSION}
+RUN apt-get update; apt install -y curl unzip
+RUN curl -fsSL https://bun.sh/install | bash
+ENV PATH /root/.bun/bin:$PATH
 
 #######################################################################
 
@@ -17,16 +13,17 @@ ENV NODE_ENV production
 
 COPY . .
 
-RUN npm install
+RUN bun install
 FROM debian:bullseye
 
-LABEL fly_launch_runtime="nodejs"
+LABEL fly_launch_runtime="bun"
 
-COPY --from=builder /root/.volta /root/.volta
+COPY --from=builder /root/.bun /root/.bun
 COPY --from=builder /app /app
+COPY index.js /app/index.js
 
 WORKDIR /app
 ENV NODE_ENV production
-ENV PATH /root/.volta/bin:$PATH
+ENV PATH /root/.bun/bin:$PATH
 
-CMD [ "npm", "run", "start" ]
+CMD [ "bun", "index.js" ]
